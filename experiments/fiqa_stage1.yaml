@@ -1,0 +1,25 @@
+name: fiqa_stage1
+dataset: fiqa
+data_split: test
+qrel_eval_protocol: parent_id_ref_passage_text
+
+ragas:
+  metric_names:
+    - context_precision
+    - context_recall
+    - faithfulness
+    - answer_relevancy
+  weights:
+    context_precision: 0.25
+    context_recall: 0.25
+    faithfulness: 0.25
+    answer_relevancy: 0.25
+  query_subset: 50
+  seed: 42
+
+optuna:
+  n_trials: 10
+  direction: maximize
+  two_phase: false
+  study_name: optirag-fiqa-s1
+  tune_index_hyperparams: false
