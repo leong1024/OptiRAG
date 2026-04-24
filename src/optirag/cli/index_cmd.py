@@ -6,18 +6,12 @@ from pathlib import Path
 
 import typer
 
-from optirag.adapters.gemini.embedder import GeminiEmbedder
-from optirag.adapters.pinecone.store import PineconeRetriever
 from optirag.config.experiment import load_experiment
 from optirag.config.settings import get_settings
 from optirag.data.beir_fiqa import load_fiqa
 from optirag.domain.types import DataSplit
-from optirag.optimization.trial_params import (
-    Stage1TrialParams,
-    index_cache_key,
-    trial_params_fingerprint,
-)
-from optirag.preprocessing.chunking import chunk_corpus
+from optirag.indexing.pinecone_lifecycle import ensure_corpus_indexed
+from optirag.optimization.trial_params import trial_params_fingerprint
 
 app = typer.Typer(no_args_is_help=True, help="Build Pinecone index")
 
@@ -31,52 +25,30 @@ def build(
         exists=True,
         help="Experiment YAML",
     ),
+    force: bool = typer.Option(False, help="Rebuild even if cache manifest exists"),
 ) -> None:
-    """Chunk corpus, embed, upsert. Requires PINECONE_INDEX_HOST and a Pinecone index with matching dimension."""
+    """Chunk corpus, embed, upsert. Uses `stage1_base` from the experiment YAML."""
     exp = load_experiment(experiment)
     s = get_settings()
     data_path = s.data_dir / "fiqa"
     loaded = load_fiqa(data_path, split=DataSplit(exp.data_split))
-    p = Stage1TrialParams()
-    embedder = GeminiEmbedder(
-        p.embedding_model,
-        output_dimensionality=p.output_dim_override,
-        l2_normalize=p.l2_normalize,
+    p = exp.resolved_stage1_params()
+    ic = ensure_corpus_indexed(
+        loaded,
+        p,
+        corpus_version=exp.name,
+        force_rebuild=force,
     )
-    dim = p.embedding_dim()
-    chunks = chunk_corpus(loaded.corpus, p)
-    texts = [c.text for c in chunks]
-    metas = [
-        {
-            "beir_corpus_id": c.beir_corpus_id,
-            "text": c.text,
-            "chunk_index": c.chunk_index,
-        }
-        for c in chunks
-    ]
-    ids = [f"{c.beir_corpus_id}:{c.chunk_index}" for c in chunks]
-    vecs: list[list[float]] = []
-    batch = 32
-    for i in range(0, len(texts), batch):
-        vecs.extend(embedder.embed_documents(texts[i : i + batch]))
-    retriever = PineconeRetriever()
-    retriever.upsert(vecs, ids, metas)
     manifest = {
-        "num_vectors": len(ids),
-        "fingerprint": trial_params_fingerprint(p),
-        "index_key": index_cache_key(
-            corpus_version=exp.name,
-            chunk_strategy=p.chunk_strategy,
-            chunk_size=p.chunk_size,
-            chunk_overlap=p.chunk_overlap,
-            cleaning_mode=p.cleaning_mode,
-            embedding_model=p.embedding_model,
-            output_dim=dim,
-            pinecone_metric=p.pinecone_metric,
-            l2_normalize=p.l2_normalize,
-        ),
+        "num_vectors": ic.num_vectors,
+        "fingerprint": ic.fingerprint,
+        "trial_params_fingerprint": trial_params_fingerprint(p),
+        "index_key": ic.index_key,
+        "namespace": ic.namespace,
+        "host": ic.host,
+        "from_cache": ic.from_cache,
     }
     out = s.artifacts_dir / "last_index_build.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    typer.echo(f"Upserted {len(ids)} vectors. Wrote {out}")
+    typer.echo(f"Index ready namespace={ic.namespace} wrote {out}")

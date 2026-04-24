@@ -24,6 +24,26 @@ class Settings(BaseSettings):
         default="",
         validation_alias=AliasChoices("PINECONE_INDEX_HOST", "OPTIRAG_PINECONE_INDEX_HOST"),
     )
+    pinecone_auto_create: bool = Field(
+        default=False,
+        description="If true, create serverless indexes via API for each (dim, metric) when missing from registry.",
+    )
+    pinecone_cloud: str = Field(
+        default="aws",
+        validation_alias=AliasChoices("OPTIRAG_PINECONE_CLOUD", "PINECONE_CLOUD"),
+    )
+    pinecone_region: str = Field(
+        default="us-east-1",
+        validation_alias=AliasChoices("OPTIRAG_PINECONE_REGION", "PINECONE_REGION"),
+    )
+    pinecone_index_prefix: str = Field(
+        default="optirag",
+        validation_alias=AliasChoices("OPTIRAG_PINECONE_INDEX_PREFIX", "PINECONE_INDEX_PREFIX"),
+    )
+    pinecone_index_registry_path: Path | None = Field(
+        default=None,
+        description="JSON map 'dim:metric' -> host; default artifacts/pinecone_index_registry.json",
+    )
     data_dir: Path = Field(default=Path("data"))
     artifacts_dir: Path = Field(default=Path("artifacts"))
     log_level: str = "INFO"
@@ -42,3 +62,8 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def pinecone_registry_path(s: Settings | None = None) -> Path:
+    st = s or get_settings()
+    return st.pinecone_index_registry_path or (st.artifacts_dir / "pinecone_index_registry.json")

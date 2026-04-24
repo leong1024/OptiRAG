@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
@@ -8,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from optirag.domain.types import DataSplit
 from optirag.eval.metrics import ScalarWeights
+from optirag.optimization.trial_params import Stage1TrialParams
 
 
 class RagasConfig(BaseModel):
@@ -53,6 +55,17 @@ class ExperimentConfig(BaseModel):
     ragas: RagasConfig = Field(default_factory=RagasConfig)
     optuna: OptunaConfig = Field(default_factory=OptunaConfig)
     extra: dict[str, Any] = Field(default_factory=dict)
+    stage1_base: dict[str, Any] | None = Field(
+        default=None,
+        description="Overrides merged onto `Stage1TrialParams()` for index build and retrieval-only base.",
+    )
+
+    def resolved_stage1_params(self) -> Stage1TrialParams:
+        """Defaults + optional `stage1_base` from YAML."""
+        merged: dict[str, Any] = asdict(Stage1TrialParams())
+        if self.stage1_base:
+            merged.update(self.stage1_base)
+        return Stage1TrialParams.from_dict(merged)
 
     @classmethod
     def load(cls, path: Path) -> ExperimentConfig:

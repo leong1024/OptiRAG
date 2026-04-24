@@ -88,8 +88,11 @@ def run_rag_query(
     else:
         rq = identity_retrieval_query(user_query)
     qv = embedder.embed_query(rq)
-    raw = retriever.query(qv, top_k=trial.top_k)
+    fetch_k = max(trial.top_k, trial.rerank_m) if trial.rerank_enabled else trial.top_k
+    raw = retriever.query(qv, top_k=fetch_k)
     ranked = _apply_post_retrieval(raw, trial)
+    if trial.rerank_enabled and len(ranked) > trial.top_k:
+        ranked = ranked[: trial.top_k]
     context, pids = _build_context(ranked, trial.context_char_budget)
     user_block = f"Context:\n{context}\n\nQuestion:\n{user_query}"
     answer = llm.complete(

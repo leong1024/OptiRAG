@@ -63,26 +63,32 @@ def trial_params_fingerprint(p: Stage1TrialParams) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
 
+INDEX_CACHE_KEY_VERSION = 1
+
+
 def index_cache_key(
     *,
     corpus_version: str,
     chunk_strategy: str,
     chunk_size: int,
     chunk_overlap: int,
+    min_chunk_chars: int,
     cleaning_mode: str,
     embedding_model: str,
     output_dim: int,
     pinecone_metric: str,
     l2_normalize: bool,
 ) -> str:
-    """Stable id for a Pinecone index (same corpus embedded the same way)."""
+    """Stable id for a logical index (chunk + embed + metric); use as Pinecone namespace base."""
     h = hashlib.sha256(
         json.dumps(
             {
+                "v": INDEX_CACHE_KEY_VERSION,
                 "corpus_version": corpus_version,
                 "chunk_strategy": chunk_strategy,
                 "chunk_size": chunk_size,
                 "chunk_overlap": chunk_overlap,
+                "min_chunk_chars": min_chunk_chars,
                 "cleaning_mode": cleaning_mode,
                 "embedding_model": embedding_model,
                 "output_dim": output_dim,
@@ -94,3 +100,30 @@ def index_cache_key(
     ).hexdigest()[:20]
     safe_model = embedding_model.replace(".", "-").replace("_", "-")
     return f"optirag-{safe_model}-d{output_dim}-m{pinecone_metric[:3]}-n{int(l2_normalize)}-{h}"
+
+
+def index_cache_key_from_params(corpus_version: str, p: Stage1TrialParams) -> str:
+    """Convenience: full key from trial params (index-defining fields only)."""
+    return index_cache_key(
+        corpus_version=corpus_version,
+        chunk_strategy=p.chunk_strategy,
+        chunk_size=p.chunk_size,
+        chunk_overlap=p.chunk_overlap,
+        min_chunk_chars=p.min_chunk_chars,
+        cleaning_mode=p.cleaning_mode,
+        embedding_model=p.embedding_model,
+        output_dim=p.embedding_dim(),
+        pinecone_metric=p.pinecone_metric,
+        l2_normalize=p.l2_normalize,
+    )
+
+
+def pinecone_namespace_id(fingerprint: str) -> str:
+    """Pinecone namespace: short stable id (under typical length limits)."""
+    return f"opt-{fingerprint}"
+
+
+def stage1_index_fingerprint(corpus_version: str, p: Stage1TrialParams) -> str:
+    """Stable 16-char id for index-defining params (excludes top_k, post-retrieval)."""
+    key = index_cache_key_from_params(corpus_version, p)
+    return hashlib.sha256(key.encode()).hexdigest()[:16]

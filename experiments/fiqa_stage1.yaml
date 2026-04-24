@@ -3,6 +3,11 @@ dataset: fiqa
 data_split: test
 qrel_eval_protocol: parent_id_ref_passage_text
 
+# Optional: overrides merged onto default Stage1TrialParams for index build + retrieval-only Optuna base.
+# stage1_base:
+#   chunk_size: 1024
+#   top_k: 10
+
 ragas:
   metric_names:
     - context_precision
