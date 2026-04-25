@@ -27,4 +27,5 @@ optuna:
   direction: maximize
   two_phase: false
   study_name: optirag-fiqa-s1
+  storage: sqlite:///artifacts/optuna/optirag-fiqa-s1.db
   tune_index_hyperparams: false

@@ -36,6 +36,14 @@ class OptunaConfig(BaseModel):
     direction: str = "maximize"
     two_phase: bool = False
     study_name: str = "optirag-stage1"
+    storage: str | None = Field(
+        default=None,
+        description=(
+            "Optuna storage URL (for resume/checkpoint), e.g. "
+            "'sqlite:///artifacts/optuna/stage1.db'. "
+            "If omitted, CLI defaults to a persistent sqlite DB in artifacts/optuna."
+        ),
+    )
     tune_index_hyperparams: bool = Field(
         default=False,
         description=(
