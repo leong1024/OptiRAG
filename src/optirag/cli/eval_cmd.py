@@ -20,12 +20,16 @@ def run_eval(
 ) -> None:
     exp = load_experiment(experiment)
     s = get_settings()
-    loaded = load_fiqa(s.data_dir / "fiqa", split=DataSplit(exp.data_split))
+    loaded = load_fiqa(
+        s.data_dir / "fiqa",
+        split=DataSplit(exp.data_split),
+        max_docs=exp.fiqa_max_docs,
+    )
     p = exp.resolved_stage1_params()
     ctx = ObjectiveContext(
         data=loaded,
         experiment=exp,
-        corpus_version=exp.name,
+        corpus_version=exp.resolved_corpus_version(),
     )
     report = run_single_config_eval(p, ctx)
     out = s.artifacts_dir / "reports" / f"eval_{exp.name}.json"

@@ -31,12 +31,16 @@ def build(
     exp = load_experiment(experiment)
     s = get_settings()
     data_path = s.data_dir / "fiqa"
-    loaded = load_fiqa(data_path, split=DataSplit(exp.data_split))
+    loaded = load_fiqa(
+        data_path,
+        split=DataSplit(exp.data_split),
+        max_docs=exp.fiqa_max_docs,
+    )
     p = exp.resolved_stage1_params()
     ic = ensure_corpus_indexed(
         loaded,
         p,
-        corpus_version=exp.name,
+        corpus_version=exp.resolved_corpus_version(),
         force_rebuild=force,
     )
     manifest = {

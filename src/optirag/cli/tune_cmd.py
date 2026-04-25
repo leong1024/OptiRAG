@@ -26,11 +26,15 @@ def tune_stage1(
     optuna_dir = s.artifacts_dir / "optuna"
     optuna_dir.mkdir(parents=True, exist_ok=True)
     storage = exp.optuna.storage or f"sqlite:///{(optuna_dir / f'{exp.optuna.study_name}.db').as_posix()}"
-    loaded = load_fiqa(s.data_dir / "fiqa", split=DataSplit(exp.data_split))
+    loaded = load_fiqa(
+        s.data_dir / "fiqa",
+        split=DataSplit(exp.data_split),
+        max_docs=exp.fiqa_max_docs,
+    )
     ctx = ObjectiveContext(
         data=loaded,
         experiment=exp,
-        corpus_version=exp.name,
+        corpus_version=exp.resolved_corpus_version(),
     )
     study = run_optuna_stage1(
         ctx,

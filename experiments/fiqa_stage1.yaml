@@ -2,6 +2,9 @@ name: fiqa_stage1
 dataset: fiqa
 data_split: test
 qrel_eval_protocol: parent_id_ref_passage_text
+# Keep corpus small for free-tier embedding quotas.
+# With batch size 32, 15,000 docs is ~469 embed requests for indexing.
+fiqa_max_docs: 15000
 
 # Optional: overrides merged onto default Stage1TrialParams for index build + retrieval-only Optuna base.
 # stage1_base:

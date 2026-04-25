@@ -18,6 +18,7 @@ Each **index-defining** configuration (chunking, cleaning, embedding model, outp
 
 - **Retrieval-only tuning** (`optuna.tune_index_hyperparams: false` in the experiment YAML): Optuna varies `top_k`, score cut, dedup, context budget, etc. The **frozen** index settings come from `stage1_base` optional keys (merged onto defaults) in the experiment file. Run `optirag index build` once with the same YAML so the cache matches.
 - **Full Stage 1 tuning** (`tune_index_hyperparams: true`): each trial may change chunk/embed/metric; `optirag tune stage1` **embeds and upserts** per new fingerprint (cached on repeat) and uses a matching **query embedder** for that trial.
+- **Quota-friendly subset** (`fiqa_max_docs`): if set in experiment YAML, only the first N FiQA corpus docs are loaded, and qrels/queries are filtered to match. Useful for free-tier quotas and faster iteration.
 
 **Pinecone host resolution**
 

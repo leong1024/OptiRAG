@@ -60,6 +60,10 @@ class ExperimentConfig(BaseModel):
     dataset: str = "fiqa"
     data_split: DataSplit = DataSplit.TEST
     qrel_eval_protocol: str = "parent_id_ref_passage_text"
+    fiqa_max_docs: int | None = Field(
+        default=None,
+        description="If set, load only the first N FiQA corpus docs (and filter qrels/queries accordingly).",
+    )
     ragas: RagasConfig = Field(default_factory=RagasConfig)
     optuna: OptunaConfig = Field(default_factory=OptunaConfig)
     extra: dict[str, Any] = Field(default_factory=dict)
@@ -74,6 +78,12 @@ class ExperimentConfig(BaseModel):
         if self.stage1_base:
             merged.update(self.stage1_base)
         return Stage1TrialParams.from_dict(merged)
+
+    def resolved_corpus_version(self) -> str:
+        """Stable corpus version id for index-cache fingerprints."""
+        if self.fiqa_max_docs is None:
+            return f"{self.name}:all"
+        return f"{self.name}:max_docs={self.fiqa_max_docs}"
 
     @classmethod
     def load(cls, path: Path) -> ExperimentConfig:
