@@ -200,8 +200,22 @@ def ensure_corpus_indexed(
     ids = [f"{c.beir_corpus_id}:{c.chunk_index}" for c in chunks]
     vecs: list[list[float]] = []
     batch = 32
-    for i in range(0, len(texts), batch):
-        vecs.extend(embedder.embed_documents(texts[i : i + batch]))
+    total_chunks = len(texts)
+    total_batches = (total_chunks + batch - 1) // batch if total_chunks else 0
+    for batch_idx, i in enumerate(range(0, total_chunks, batch), start=1):
+        batch_texts = texts[i : i + batch]
+        vecs.extend(embedder.embed_documents(batch_texts))
+        embedded_chunks = min(i + len(batch_texts), total_chunks)
+        if batch_idx == 1 or batch_idx == total_batches or batch_idx % 10 == 0:
+            pct = (embedded_chunks / total_chunks * 100.0) if total_chunks else 100.0
+            logger.info(
+                "Embedding progress: %d/%d chunks (%.1f%%), batch %d/%d",
+                embedded_chunks,
+                total_chunks,
+                pct,
+                batch_idx,
+                total_batches,
+            )
     retriever = PineconeRetriever(index_host=host, namespace=ns)
     retriever.upsert(vecs, ids, metas)
     manifest = {
