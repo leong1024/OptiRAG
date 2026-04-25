@@ -6,10 +6,10 @@ qrel_eval_protocol: parent_id_ref_passage_text
 # With batch size 32, 15,000 docs is ~469 embed requests for indexing.
 fiqa_max_docs: 15000
 
-# Optional: overrides merged onto default Stage1TrialParams for index build + retrieval-only Optuna base.
-# stage1_base:
-#   chunk_size: 1024
-#   top_k: 10
+# Overrides merged onto default Stage1TrialParams for index build + retrieval-only Optuna base.
+# After changing embedding_model, run `optirag index build` again (use `--force` to ignore stale cache).
+stage1_base:
+  embedding_model: gemini-embedding-002
 
 ragas:
   metric_names:
