@@ -42,6 +42,35 @@ class PineconeRetriever:
                 namespace=self._namespace,
             )
 
+    def upsert_batch(
+        self,
+        vectors: list[list[float]],
+        ids: list[str],
+        metadata: list[dict[str, Any]],
+    ) -> None:
+        self._index.upsert(
+            vectors=[
+                {"id": vid, "values": v, "metadata": m}
+                for vid, v, m in zip(ids, vectors, metadata, strict=True)
+            ],
+            namespace=self._namespace,
+        )
+
+    def delete_namespace(self) -> None:
+        self._index.delete(delete_all=True, namespace=self._namespace)
+
+    def namespace_vector_count(self) -> int | None:
+        stats = self._index.describe_index_stats()
+        namespaces = getattr(stats, "namespaces", None)
+        if not namespaces:
+            return None
+        entry = namespaces.get(self._namespace)
+        if not entry:
+            return 0
+        if isinstance(entry, dict):
+            return int(entry.get("vector_count", 0))
+        return int(getattr(entry, "vector_count", 0))
+
     def query(
         self,
         vector: list[float],

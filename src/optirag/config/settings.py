@@ -44,6 +44,18 @@ class Settings(BaseSettings):
         default=None,
         description="JSON map 'dim:metric' -> host; default artifacts/pinecone_index_registry.json",
     )
+    index_force_fresh: bool = Field(
+        default=False,
+        description="If true, clear namespace and rebuild index data from scratch.",
+    )
+    index_upsert_max_retries: int = Field(
+        default=3,
+        description="Maximum retries for transient Pinecone upsert failures per batch.",
+    )
+    index_upsert_backoff_base_seconds: float = Field(
+        default=0.5,
+        description="Base seconds for exponential backoff on upsert retry.",
+    )
     data_dir: Path = Field(default=Path("data"))
     artifacts_dir: Path = Field(default=Path("artifacts"))
     log_level: str = "INFO"

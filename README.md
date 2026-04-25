@@ -26,6 +26,31 @@ Each **index-defining** configuration (chunking, cleaning, embedding model, outp
 2. **Single host binding**: with an **empty** registry, set `PINECONE_INDEX_HOST`; the first `(dim, metric)` your runs need is recorded under that host. Further distinct pairs require new entries or `OPTIRAG_PINECONE_AUTO_CREATE=true`.
 3. **Auto-create** (`OPTIRAG_PINECONE_AUTO_CREATE=true`): creates serverless indexes using `OPTIRAG_PINECONE_CLOUD` / `OPTIRAG_PINECONE_REGION` and stores hosts in the registry.
 
+**Resumable index build + fresh rebuild**
+
+- Index build now checkpoints progress in `artifacts/index_cache/<fingerprint>/progress.json` after each successful upserted batch.
+- If a run is interrupted, rerunning `optirag index build` resumes from the last committed offset for that fingerprint/namespace/host.
+- Final cache hit still depends on a complete `manifest.json`; partial runs never produce a cache hit.
+- To force a clean rebuild, set `OPTIRAG_INDEX_FORCE_FRESH=true` (or use `optirag index build --force`): the target namespace is cleared before rebuild, then progress/manifest are rewritten.
+- Optional upsert retry tuning:
+  - `OPTIRAG_INDEX_UPSERT_MAX_RETRIES` (default `3`)
+  - `OPTIRAG_INDEX_UPSERT_BACKOFF_BASE_SECONDS` (default `0.5`)
+
+**Operational quick guide**
+
+- Normal resumable run:
+  - `optirag index build --experiment experiments/fiqa_stage1.yaml`
+- Force fresh run (one-off):
+  1. set `OPTIRAG_INDEX_FORCE_FRESH=true`
+  2. run `optirag index build --experiment experiments/fiqa_stage1.yaml`
+  3. set `OPTIRAG_INDEX_FORCE_FRESH=false`
+- Equivalent CLI override for a single command:
+  - `optirag index build --experiment experiments/fiqa_stage1.yaml --force`
+- Build outputs:
+  - in-progress checkpoint: `artifacts/index_cache/<fingerprint>/progress.json`
+  - completed cache marker: `artifacts/index_cache/<fingerprint>/manifest.json`
+  - latest build summary: `artifacts/last_index_build.json`
+
 **Cost:** new fingerprints run full-corpus embedding and upsert; reuse the cache or cap `ragas.query_subset` for development.
 
 ### Step-by-step guide (FiQA + Optuna resume + plotting)
