@@ -80,7 +80,7 @@ def test_index_build_cli_writes_last_manifest(monkeypatch: Any, tmp_path: Path) 
 
     exp_path = tmp_path / "exp.yaml"
     exp_path.write_text("name: fake\n", encoding="utf-8")
-    result = runner.invoke(index_cmd.app, ["build", "--experiment", str(exp_path), "--force"])
+    result = runner.invoke(index_cmd.app, ["--experiment", str(exp_path), "--force"])
     assert result.exit_code == 0, result.output
 
     out_path = fake_settings.artifacts_dir / "last_index_build.json"
