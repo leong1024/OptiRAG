@@ -9,6 +9,12 @@ def test_identity_chunk() -> None:
     assert ch[0].beir_corpus_id == "d1"
 
 
+def test_empty_identity_chunk_is_skipped() -> None:
+    p = Stage1TrialParams(chunk_strategy="identity_one_vec_per_line")
+    assert chunk_passage("d1", "", p) == []
+    assert chunk_passage("d1", "   \n\t", p) == []
+
+
 def test_fixed_window() -> None:
     p = Stage1TrialParams(
         chunk_strategy="fixed_window",

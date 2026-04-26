@@ -9,7 +9,7 @@ fiqa_max_docs: 15000
 # Overrides merged onto default Stage1TrialParams for index build + retrieval-only Optuna base.
 # After changing embedding_model, run `optirag index build` again (use `--force` to ignore stale cache).
 stage1_base:
-  embedding_model: gemini-embedding-002
+  embedding_model: gemini-embedding-001
 
 ragas:
   metric_names:

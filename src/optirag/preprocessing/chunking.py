@@ -11,8 +11,10 @@ def chunk_passage(
     p: Stage1TrialParams,
 ) -> list[TextChunk]:
     text = clean_text(raw_text, p.cleaning_mode)
+    if not text.strip():
+        return []
     strategy = p.chunk_strategy
-    if strategy == "identity_one_vec_per_line" or not text:
+    if strategy == "identity_one_vec_per_line":
         if len(text) < p.min_chunk_chars and text:
             return []
         return [TextChunk(beir_corpus_id=beir_corpus_id, text=text, chunk_index=0)]

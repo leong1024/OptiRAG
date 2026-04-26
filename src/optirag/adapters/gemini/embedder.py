@@ -54,9 +54,15 @@ class GeminiEmbedder:
         return self._embed_batch(texts)
 
     def embed_query(self, text: str) -> list[float]:
+        if not text.strip():
+            msg = "Cannot embed an empty query"
+            raise ValueError(msg)
         return self._embed_batch([text])[0]
 
     def _embed_batch(self, texts: list[str]) -> list[list[float]]:
+        texts = [text for text in texts if text.strip()]
+        if not texts:
+            return []
         last: Exception | None = None
         attempt = 0
         rate_limit_waits = 0
